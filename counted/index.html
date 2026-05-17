@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Countdown Timer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1f2933;
+      --muted: #617083;
+      --panel: #ffffff;
+      --line: #d7dde5;
+      --accent: #0f766e;
+      --accent-strong: #115e59;
+      --danger: #b42318;
+      --bg-a: #f4f7f9;
+      --bg-b: #e9eff3;
+      --shadow: 0 18px 40px rgba(31, 41, 51, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.12), transparent 42%),
+        linear-gradient(315deg, rgba(180, 35, 24, 0.10), transparent 48%),
+        linear-gradient(180deg, var(--bg-a), var(--bg-b));
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 24px;
+    }
+
+    main {
+      width: min(100%, 440px);
+      background: var(--panel);
+      border: 1px solid rgba(215, 221, 229, 0.85);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: clamp(22px, 5vw, 34px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 5vw, 2rem);
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 26px;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.45;
+    }
+
+    .time-inputs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+      height: 52px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      font: inherit;
+      font-size: 1.18rem;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.16);
+    }
+
+    input:disabled {
+      background: #f7f9fb;
+      color: #7b8794;
+    }
+
+    .display {
+      display: grid;
+      place-items: center;
+      min-height: 132px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafb;
+      margin-bottom: 18px;
+    }
+
+    .time {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(3rem, 15vw, 4.85rem);
+      font-weight: 820;
+      line-height: 1;
+    }
+
+    .status {
+      min-height: 24px;
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 0.96rem;
+      text-align: center;
+    }
+
+    .status.finished {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .alarm-toggle {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .alarm-panel {
+      display: none;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .alarm-panel.open {
+      display: block;
+    }
+
+    .alarm-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .alarm-form input {
+      height: 46px;
+      font-size: 1rem;
+      text-align: left;
+      padding: 0 12px;
+    }
+
+    .alarm-form button {
+      min-height: 46px;
+      padding: 0 16px;
+    }
+
+    .alarm-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .alarm-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      text-align: center;
+    }
+
+    .alarm-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 52px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafb;
+    }
+
+    .alarm-item input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+    }
+
+    .alarm-info {
+      min-width: 0;
+    }
+
+    .alarm-time {
+      display: block;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .alarm-name {
+      display: block;
+      margin-top: 2px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 0.86rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .alarm-delete {
+      min-height: 36px;
+      padding: 0 12px;
+      font-size: 0.9rem;
+    }
+
+    button {
+      min-width: 0;
+      min-height: 48px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 760;
+      transition: transform 120ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .primary:hover {
+      background: var(--accent-strong);
+    }
+
+    .secondary {
+      background: #eef3f5;
+      color: var(--ink);
+      border-color: #dbe2e8;
+    }
+
+    .secondary:hover {
+      background: #e2e9ee;
+    }
+
+    .danger {
+      background: #fff3f1;
+      color: var(--danger);
+      border-color: #ffd3cc;
+    }
+
+    .danger:hover {
+      background: #ffe6e1;
+    }
+
+    @media (max-width: 390px) {
+      body {
+        padding: 14px;
+      }
+
+      main {
+        padding: 20px;
+      }
+
+      .time-inputs,
+      .controls,
+      .alarm-form,
+      .alarm-list {
+        gap: 8px;
+      }
+
+      .alarm-form {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Countdown Timer</h1>
+    <p class="subtitle">Set a duration, start the timer, and hear a notification when it reaches zero.</p>
+
+    <form class="time-inputs" aria-label="Timer duration">
+      <label>
+        Hours
+        <input id="hours" type="number" inputmode="numeric" min="0" max="99" value="0" aria-label="Hours">
+      </label>
+      <label>
+        Minutes
+        <input id="minutes" type="number" inputmode="numeric" min="0" max="59" value="5" aria-label="Minutes">
+      </label>
+      <label>
+        Seconds
+        <input id="seconds" type="number" inputmode="numeric" min="0" max="59" value="0" aria-label="Seconds">
+      </label>
+    </form>
+
+    <section class="display" aria-live="polite" aria-atomic="true">
+      <div id="time" class="time">05:00</div>
+    </section>
+
+    <p id="status" class="status">Ready</p>
+
+    <div class="controls">
+      <button id="start" class="primary" type="button">Start</button>
+      <button id="pause" class="secondary" type="button">Pause</button>
+      <button id="reset" class="danger" type="button">Reset</button>
+    </div>
+
+    <button id="alarm-toggle" class="secondary alarm-toggle" type="button" aria-expanded="false" aria-controls="alarm-panel">
+      Alarms
+    </button>
+
+    <section id="alarm-panel" class="alarm-panel" aria-label="Alarm settings">
+      <form id="alarm-form" class="alarm-form">
+        <label>
+          Alarm time
+          <input id="alarm-time" type="time" required aria-label="Alarm time">
+        </label>
+        <label>
+          Label
+          <input id="alarm-label" type="text" maxlength="28" placeholder="Morning" aria-label="Alarm label">
+        </label>
+        <button class="primary" type="submit">Add</button>
+      </form>
+
+      <div id="alarm-list" class="alarm-list" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    const hoursInput = document.querySelector("#hours");
+    const minutesInput = document.querySelector("#minutes");
+    const secondsInput = document.querySelector("#seconds");
+    const timeDisplay = document.querySelector("#time");
+    const statusText = document.querySelector("#status");
+    const startButton = document.querySelector("#start");
+    const pauseButton = document.querySelector("#pause");
+    const resetButton = document.querySelector("#reset");
+    const alarmToggle = document.querySelector("#alarm-toggle");
+    const alarmPanel = document.querySelector("#alarm-panel");
+    const alarmForm = document.querySelector("#alarm-form");
+    const alarmTimeInput = document.querySelector("#alarm-time");
+    const alarmLabelInput = document.querySelector("#alarm-label");
+    const alarmList = document.querySelector("#alarm-list");
+    const inputs = [hoursInput, minutesInput, secondsInput];
+
+    let timerId = null;
+    let remainingSeconds = getInputSeconds();
+    let initialSeconds = remainingSeconds;
+    let audioContext = null;
+    let alarms = [];
+    let lastAlarmMinute = "";
+
+    function clampNumber(value, min, max) {
+      const number = Number.parseInt(value, 10);
+      if (Number.isNaN(number)) {
+        return min;
+      }
+      return Math.min(Math.max(number, min), max);
+    }
+
+    function getInputSeconds() {
+      const hours = clampNumber(hoursInput.value, 0, 99);
+      const minutes = clampNumber(minutesInput.value, 0, 59);
+      const seconds = clampNumber(secondsInput.value, 0, 59);
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+
+    function syncInputs() {
+      hoursInput.value = clampNumber(hoursInput.value, 0, 99);
+      minutesInput.value = clampNumber(minutesInput.value, 0, 59);
+      secondsInput.value = clampNumber(secondsInput.value, 0, 59);
+      remainingSeconds = getInputSeconds();
+      initialSeconds = remainingSeconds;
+      updateDisplay();
+      setStatus("Ready");
+    }
+
+    function formatTime(totalSeconds) {
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      const paddedMinutes = String(minutes).padStart(2, "0");
+      const paddedSeconds = String(seconds).padStart(2, "0");
+
+      if (hours > 0) {
+        return `${String(hours).padStart(2, "0")}:${paddedMinutes}:${paddedSeconds}`;
+      }
+
+      return `${paddedMinutes}:${paddedSeconds}`;
+    }
+
+    function updateDisplay() {
+      timeDisplay.textContent = formatTime(remainingSeconds);
+    }
+
+    function setStatus(message, isFinished = false) {
+      statusText.textContent = message;
+      statusText.classList.toggle("finished", isFinished);
+    }
+
+    function setInputsDisabled(disabled) {
+      inputs.forEach((input) => {
+        input.disabled = disabled;
+      });
+    }
+
+    function getAudioContext() {
+      audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      return audioContext;
+    }
+
+    function playTick() {
+      const context = getAudioContext();
+      const now = context.currentTime;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+
+      oscillator.type = "square";
+      oscillator.frequency.setValueAtTime(1400, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.05);
+    }
+
+    function playNotification() {
+      const context = getAudioContext();
+      const now = context.currentTime;
+      const notes = [880, 1174.66, 1396.91];
+
+      notes.forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const start = now + index * 0.18;
+        const end = start + 0.14;
+
+        oscillator.type = "sine";
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.28, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(start);
+        oscillator.stop(end);
+      });
+    }
+
+    function renderAlarms() {
+      alarmList.innerHTML = "";
+
+      if (alarms.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "alarm-empty";
+        empty.textContent = "No alarms configured";
+        alarmList.append(empty);
+        return;
+      }
+
+      alarms
+        .slice()
+        .sort((first, second) => first.time.localeCompare(second.time))
+        .forEach((alarm) => {
+          const item = document.createElement("article");
+          item.className = "alarm-item";
+
+          const toggle = document.createElement("input");
+          toggle.type = "checkbox";
+          toggle.checked = alarm.enabled;
+          toggle.setAttribute("aria-label", `Enable alarm at ${alarm.time}`);
+          toggle.addEventListener("change", () => {
+            alarm.enabled = toggle.checked;
+            setStatus(toggle.checked ? `Alarm enabled for ${alarm.time}` : `Alarm disabled for ${alarm.time}`);
+          });
+
+          const info = document.createElement("div");
+          info.className = "alarm-info";
+
+          const time = document.createElement("span");
+          time.className = "alarm-time";
+          time.textContent = alarm.time;
+
+          const name = document.createElement("span");
+          name.className = "alarm-name";
+          name.textContent = alarm.label || "Alarm";
+
+          const deleteButton = document.createElement("button");
+          deleteButton.className = "danger alarm-delete";
+          deleteButton.type = "button";
+          deleteButton.textContent = "Delete";
+          deleteButton.addEventListener("click", () => {
+            alarms = alarms.filter((existingAlarm) => existingAlarm.id !== alarm.id);
+            renderAlarms();
+            setStatus("Alarm deleted");
+          });
+
+          info.append(time, name);
+          item.append(toggle, info, deleteButton);
+          alarmList.append(item);
+        });
+    }
+
+    function addAlarm(event) {
+      event.preventDefault();
+
+      const time = alarmTimeInput.value;
+      if (!time) {
+        setStatus("Choose an alarm time");
+        return;
+      }
+
+      const label = alarmLabelInput.value.trim();
+      alarms.push({
+        id: window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+        time,
+        label,
+        enabled: true
+      });
+
+      alarmForm.reset();
+      renderAlarms();
+      setStatus(`Alarm set for ${time}`);
+    }
+
+    function checkAlarms() {
+      const now = new Date();
+      const currentMinute = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+      if (currentMinute === lastAlarmMinute) {
+        return;
+      }
+
+      const matchingAlarm = alarms.find((alarm) => alarm.enabled && alarm.time === currentMinute);
+      if (!matchingAlarm) {
+        return;
+      }
+
+      lastAlarmMinute = currentMinute;
+      setStatus(`${matchingAlarm.label || "Alarm"} ringing`, true);
+      playNotification();
+    }
+
+    function finishTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      remainingSeconds = 0;
+      updateDisplay();
+      setInputsDisabled(false);
+      setStatus("Time is up", true);
+      playNotification();
+    }
+
+    function startTimer() {
+      if (timerId) {
+        return;
+      }
+
+      if (remainingSeconds <= 0) {
+        remainingSeconds = getInputSeconds();
+        initialSeconds = remainingSeconds;
+      }
+
+      if (remainingSeconds <= 0) {
+        setStatus("Set a time greater than zero");
+        return;
+      }
+
+      setInputsDisabled(true);
+      setStatus("Running");
+      timerId = setInterval(() => {
+        remainingSeconds -= 1;
+        updateDisplay();
+
+        if (remainingSeconds <= 0) {
+          finishTimer();
+        } else {
+          playTick();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      if (!timerId) {
+        return;
+      }
+
+      clearInterval(timerId);
+      timerId = null;
+      setInputsDisabled(false);
+      setStatus("Paused");
+    }
+
+    function resetTimer() {
+      clearInterval(timerId);
+      timerId = null;
+      hoursInput.value = 0;
+      minutesInput.value = 0;
+      secondsInput.value = 0;
+      remainingSeconds = 0;
+      initialSeconds = 0;
+      setInputsDisabled(false);
+      updateDisplay();
+      setStatus("Ready");
+    }
+
+    inputs.forEach((input) => {
+      input.addEventListener("input", syncInputs);
+      input.addEventListener("blur", syncInputs);
+    });
+
+    startButton.addEventListener("click", startTimer);
+    pauseButton.addEventListener("click", pauseTimer);
+    resetButton.addEventListener("click", resetTimer);
+    alarmToggle.addEventListener("click", () => {
+      const isOpen = alarmPanel.classList.toggle("open");
+      alarmToggle.setAttribute("aria-expanded", String(isOpen));
+    });
+    alarmForm.addEventListener("submit", addAlarm);
+
+    updateDisplay();
+    renderAlarms();
+    setInterval(checkAlarms, 1000);
+  </script>
+</body>
+</html>

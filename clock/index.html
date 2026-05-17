@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clock</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101820;
+      --panel: #16222d;
+      --line: #29404f;
+      --text: #f5f8fa;
+      --muted: #a8b8c5;
+      --accent: #2dd4bf;
+      --accent-strong: #14b8a6;
+      --danger: #fb7185;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(45, 212, 191, 0.16), transparent 32%),
+        linear-gradient(145deg, #101820 0%, #182532 54%, #0f1720 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(100%, 620px);
+      padding: clamp(24px, 6vw, 44px);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(22, 34, 45, 0.92);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .clock {
+      display: block;
+      margin: 0;
+      color: var(--accent);
+      font-size: clamp(3.4rem, 16vw, 7.25rem);
+      font-weight: 820;
+      line-height: 1;
+      letter-spacing: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date {
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      line-height: 1.4;
+    }
+
+    .status {
+      min-height: 24px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .status.ringing {
+      color: var(--danger);
+      font-weight: 760;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      min-height: 46px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 760;
+      transition: transform 120ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #06201d;
+    }
+
+    .primary:hover {
+      background: var(--accent-strong);
+    }
+
+    .secondary {
+      background: #203240;
+      color: var(--text);
+      border-color: var(--line);
+    }
+
+    .secondary:hover {
+      background: #263b4b;
+    }
+
+    .danger {
+      background: rgba(251, 113, 133, 0.12);
+      color: var(--danger);
+      border-color: rgba(251, 113, 133, 0.42);
+    }
+
+    .danger:hover {
+      background: rgba(251, 113, 133, 0.18);
+    }
+
+    .alarm-toggle {
+      width: 100%;
+      margin-top: 22px;
+    }
+
+    .alarm-panel {
+      display: none;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .alarm-panel.open {
+      display: block;
+    }
+
+    .alarm-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+      height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #101b24;
+      color: var(--text);
+      outline: none;
+      padding: 0 12px;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14);
+    }
+
+    .alarm-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .alarm-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      text-align: center;
+    }
+
+    .alarm-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 54px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(16, 27, 36, 0.76);
+    }
+
+    .alarm-item input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+      padding: 0;
+    }
+
+    .alarm-info {
+      min-width: 0;
+    }
+
+    .alarm-time {
+      display: block;
+      color: var(--text);
+      font-weight: 820;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .alarm-name {
+      display: block;
+      margin-top: 2px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 0.88rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .alarm-delete {
+      min-height: 36px;
+      padding: 0 12px;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 520px) {
+      .alarm-form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>24-Hour Digital Clock</h1>
+    <time id="clock" class="clock" datetime="">00:00:00</time>
+    <p id="date" class="date"></p>
+    <p id="status" class="status">Ready</p>
+
+    <button id="alarm-toggle" class="secondary alarm-toggle" type="button" aria-expanded="false" aria-controls="alarm-panel">
+      Alarms
+    </button>
+
+    <section id="alarm-panel" class="alarm-panel" aria-label="Alarm settings">
+      <form id="alarm-form" class="alarm-form">
+        <label>
+          Alarm time
+          <input id="alarm-time" type="time" required aria-label="Alarm time">
+        </label>
+        <label>
+          Label
+          <input id="alarm-label" type="text" maxlength="28" placeholder="Morning" aria-label="Alarm label">
+        </label>
+        <button class="primary" type="submit">Add</button>
+      </form>
+
+      <div id="alarm-list" class="alarm-list" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    const clock = document.querySelector("#clock");
+    const dateText = document.querySelector("#date");
+    const statusText = document.querySelector("#status");
+    const alarmToggle = document.querySelector("#alarm-toggle");
+    const alarmPanel = document.querySelector("#alarm-panel");
+    const alarmForm = document.querySelector("#alarm-form");
+    const alarmTimeInput = document.querySelector("#alarm-time");
+    const alarmLabelInput = document.querySelector("#alarm-label");
+    const alarmList = document.querySelector("#alarm-list");
+    const dateFormatter = new Intl.DateTimeFormat(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+    let alarms = [];
+    let lastAlarmMinute = "";
+    let audioContext = null;
+
+    function twoDigits(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function setStatus(message, isRinging = false) {
+      statusText.textContent = message;
+      statusText.classList.toggle("ringing", isRinging);
+    }
+
+    function getAudioContext() {
+      audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      return audioContext;
+    }
+
+    function playAlarmSound() {
+      const context = getAudioContext();
+      const now = context.currentTime;
+      const notes = [880, 1174.66, 1396.91, 1174.66];
+
+      notes.forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const start = now + index * 0.18;
+        const end = start + 0.14;
+
+        oscillator.type = "sine";
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.28, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(start);
+        oscillator.stop(end);
+      });
+    }
+
+    function renderAlarms() {
+      alarmList.innerHTML = "";
+
+      if (alarms.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "alarm-empty";
+        empty.textContent = "No alarms configured";
+        alarmList.append(empty);
+        return;
+      }
+
+      alarms
+        .slice()
+        .sort((first, second) => first.time.localeCompare(second.time))
+        .forEach((alarm) => {
+          const item = document.createElement("article");
+          item.className = "alarm-item";
+
+          const toggle = document.createElement("input");
+          toggle.type = "checkbox";
+          toggle.checked = alarm.enabled;
+          toggle.setAttribute("aria-label", `Enable alarm at ${alarm.time}`);
+          toggle.addEventListener("change", () => {
+            alarm.enabled = toggle.checked;
+            setStatus(toggle.checked ? `Alarm enabled for ${alarm.time}` : `Alarm disabled for ${alarm.time}`);
+          });
+
+          const info = document.createElement("div");
+          info.className = "alarm-info";
+
+          const time = document.createElement("span");
+          time.className = "alarm-time";
+          time.textContent = alarm.time;
+
+          const name = document.createElement("span");
+          name.className = "alarm-name";
+          name.textContent = alarm.label || "Alarm";
+
+          const deleteButton = document.createElement("button");
+          deleteButton.className = "danger alarm-delete";
+          deleteButton.type = "button";
+          deleteButton.textContent = "Delete";
+          deleteButton.addEventListener("click", () => {
+            alarms = alarms.filter((existingAlarm) => existingAlarm.id !== alarm.id);
+            renderAlarms();
+            setStatus("Alarm deleted");
+          });
+
+          info.append(time, name);
+          item.append(toggle, info, deleteButton);
+          alarmList.append(item);
+        });
+    }
+
+    function addAlarm(event) {
+      event.preventDefault();
+
+      const time = alarmTimeInput.value;
+      if (!time) {
+        setStatus("Choose an alarm time");
+        return;
+      }
+
+      alarms.push({
+        id: window.crypto && window.crypto.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+        time,
+        label: alarmLabelInput.value.trim(),
+        enabled: true
+      });
+
+      alarmForm.reset();
+      renderAlarms();
+      setStatus(`Alarm set for ${time}`);
+    }
+
+    function checkAlarms(hours, minutes) {
+      const currentMinute = `${hours}:${minutes}`;
+
+      if (currentMinute === lastAlarmMinute) {
+        return;
+      }
+
+      const matchingAlarm = alarms.find((alarm) => alarm.enabled && alarm.time === currentMinute);
+      if (!matchingAlarm) {
+        return;
+      }
+
+      lastAlarmMinute = currentMinute;
+      setStatus(`${matchingAlarm.label || "Alarm"} ringing`, true);
+      playAlarmSound();
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const hours = twoDigits(now.getHours());
+      const minutes = twoDigits(now.getMinutes());
+      const seconds = twoDigits(now.getSeconds());
+
+      clock.textContent = `${hours}:${minutes}:${seconds}`;
+      clock.dateTime = now.toISOString();
+      dateText.textContent = dateFormatter.format(now);
+      checkAlarms(hours, minutes);
+    }
+
+    alarmToggle.addEventListener("click", () => {
+      const isOpen = alarmPanel.classList.toggle("open");
+      alarmToggle.setAttribute("aria-expanded", String(isOpen));
+    });
+    alarmForm.addEventListener("submit", addAlarm);
+
+    updateClock();
+    renderAlarms();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
